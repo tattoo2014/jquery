@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>图片切换效果</title>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+        <link rel="stylesheet" href="css/reset.css"/>
+        <script type="text/javascript" src="js/jquery-1.10.2.js"></script>
+        <script type="text/javascript" src="js/jquery.easing.js"></script>
+        <style type="text/css">
+            .album,.album2 {position: relative; width: 550px; height: 570px; margin: 10px auto; border: 1px solid #cccccc; overflow: hidden; border-radius: 5px;}
+            .album ul,.album2 ul {width: 2000px;}
+            .album ul li,.album2 ul li {position: absolute; width: 550px; height: 570px; background: white;}
+            .album ul li.curr,.album2 ul li.curr {z-index: 100;}  /* fadeImg */
+            .album1 ul li.curr {z-index: 100; top: -570px;}    /* easingTopImg */
+            /*.album ul li.curr {z-index: 100; left: -550px;}  *//* easingLeftImg */
+
+            /* 控制图片聚合散开 */
+            .album2 {margin-top: 30px;}
+            .album2 ul li div {position: absolute; width: 275px; height: 285px;}
+            .album2 ul li.item1 div {background: url("images/1.jpg") no-repeat;}
+            .album2 ul li.item2 div {background: url("images/10.jpg") no-repeat;}
+
+            .album3 ul li {transform: rotate(0deg); transition:all 0.5s ease-in-out;}
+            .album3 ul li:hover {transform: rotate(-180deg);}
+            .album3 ul li.curr {left: -550px; }
+
+
+            .album4 ul li.curr {left: 0;}
+            .album4-circle {position: absolute; left: 125px; top: 125px; width: 300px; height: 320px; background: url("images/10.jpg") no-repeat top center; border-radius: 50%; border: 1px solid red;}
+
+            .album5 ul li {transition:all 0.5s ease-in-out;}
+            .album5 ul li img {position: absolute;}
+
+        </style>
+        <script type="text/javascript">
+            $(function(){
+                var $albumImg = $("#album ul li"), /* 特效一组成图片 */
+                        $album2Img = $("#album2 ul li"), /* 特效二组成图片 */
+                        $album2ImgDiv = $album2Img.find("div"), /* 特效二组成小div */
+                        album2ImgDivLength = $album2ImgDiv.length, /* 特效二组成小div总个数 */
+                        album2ImgDivWidth = $album2ImgDiv.width(), /* 特效二组成小div宽度 */
+                        album2ImgDivHeight = $album2ImgDiv.height(), /* 特效二组成小div高度 */
+                        $album3Img = $("#album3 ul li"), /* 特效三 */
+                        $album4 = $("#album4"), /* 特效四 */
+                        $album4Circle = $("#album4 .album4-circle"), /* 特效四 */
+                        $album5Img = $("#album5 ul li"), /* 特效五 */
+                        albumImgWidth = $albumImg.width(), /* 图片总宽度，图片一致，就获取一张的 */
+                        albumImgHeight = $albumImg.height(), /* 图片总高度 */
+                        imgLength = $albumImg.length, /* 图片总数 */
+                        page = 0, /* 特效1第几张图片 */
+                        page2 = 0, /* 特效2第几张图片 */
+                        page3 = 0, /* 特效3第几张图片 */
+                        page5 = 0; /* 特效3第几张图片 */
+
+                /* 各种特效事件控制 */
+                var event = {
+                    /* fade显示图片，特效1 */
+                    fadeImg: function(){
+                        var _len = page % imgLength;
+                        $albumImg.eq(_len).addClass("curr").fadeIn(800)
+                                .siblings().removeClass("curr").fadeOut(0);
+                        page++;
+                    },
+                    /* 从上到下弹出图片 */
+                    easingTopImg: function(){
+                        page++;
+                        var _len = page % imgLength;
+                        $albumImg.eq(_len).addClass("curr").animate({"top": "0"},{duration: 1000,easing: "easeOutBounce"}).siblings().removeClass().animate({"top": "-570px"},0);
+                    },
+                    /* 从左到右弹出图片 */
+                    easingLeftImg: function(){
+                        var _len = page % imgLength;
+                        page++;
+                        $albumImg.eq(_len).addClass("curr").animate({"left": "0"},{duration: 1000,easing: "easeOutBounce"}).siblings().removeClass().animate({"left": "-550px"},0);
+                    },
+                    /* 初始化调用聚合 ，特效2*/
+                    togetherImg: function(str){
+                        $album2Img.find("div").each(function(){
+                            event.togetherFun($(this),str);
+                        })
+
+                    },
+                    /* 图片散开 */
+                    scatterImg: function(){
+                        var _len = page2 % imgLength;
+                        $(this).addClass("curr").siblings().removeClass("curr");
+                        $album2Img.eq(_len).find("div").each(function(){
+                            event.scatterFun($(this));
+                        })
+                        setTimeout(function(){
+                            page2++;
+                            var _len = page2 % imgLength;
+                            $album2Img.eq(_len).addClass("curr").siblings().removeClass("curr");
+                            $album2Img.eq(_len).find("div").each(function(){
+                                event.togetherFun($(this));
+                            })
+                        },1000);
+                    },
+                    /* 散开调用函数 */
+                    scatterFun: function($own){
+                        var __index = $own.index();
+                        var __row = Math.floor(__index / 2); /* 第几行 */
+                        var __col = __index % 2; /* 第几列 */
+                        var __cssLeft = (albumImgWidth + album2ImgDivWidth) * __col - album2ImgDivWidth;
+                        var __cssTop = (albumImgHeight + album2ImgDivHeight) * __row - album2ImgDivHeight;
+                        $own.animate({"left": __cssLeft, "top": __cssTop},1600);
+                    },
+                    /* 聚合调用函数 */
+                    togetherFun: function($own,str){
+                        var __index = $own.index();
+                        var __row = Math.floor(__index / 2); /* 第几行 */
+                        var __col = __index % 2; /* 第几列 */
+                        var __cssLeft = album2ImgDivWidth * __col;
+                        var __cssTop = album2ImgDivHeight * __row;
+                        var __imgLeft = -__cssLeft;
+                        var _imgTop = -__cssTop;
+                        if(str == "init"){
+                            $own.css({"background-position": __imgLeft+"px "+_imgTop+"px","left":__cssLeft, "top": __cssTop});
+                        }
+                        else{
+                            $own.css({"background-position": __imgLeft+"px "+_imgTop+"px" }).animate({"left":__cssLeft, "top": __cssTop},600);
+                        }
+                    },
+                    /* 图片切换变大效果，特效3 */
+                    gratingImg: function(){
+                        var _len = page3 % imgLength;
+                        page3++;
+                        $album3Img.eq(_len).addClass("curr").css({"transform": "scale(0.4) rotate(0deg)"}).animate({"left": "0"})
+                                .siblings().removeClass().animate({"left": "-550px"},100);
+                        setTimeout(function(){
+                            $album3Img.eq(_len).css({"transform": "scale(1) rotate(-360deg)"});
+                        },600);
+                    },
+                    /* 图片逐渐变大，特效4 */
+                    becomeBig: function(){
+                        var _$album4CircleWidth = $album4Circle.width();
+                        var _$album4CircleHeight = $album4Circle.height();
+                        for(var i = 300; i <550; i++){
+                            (function(){
+                                $album4Circle.animate({"width": i+"px","height": (i+20)+"px","left": (550-i)/2,"top": (550-i)/2},8); /* 图片宽度从300到550，并且改变left和top值 */
+                            })(i);
+                        }
+                    },
+                    /* 图片旋转逐渐消失，特效5 */
+                    fadeRotateImg: function(){
+//                        $album5Img.removeClass("curr");
+//                        $album5Img.eq(_len).addClass("curr").fadeIn();
+//                        for(var i = 550; i > 150; i-- ){
+//                            (function(){
+//                                $album5Img.eq(_len).find("img").animate({"width": i+"px","left": (550-i)/2,"top":(550-i)/2},5);
+//                            })(i);
+//                        }
+//                        page5++;
+//                        setTimeout(function(){
+//                            $album5Img.eq(_len).fadeOut();
+//                        },3000)
+
+                        $album5Img = $("#album5 ul li");
+                        setInterval(function(){
+                            var _len = page5 % $album5Img.length;
+//                            $album5Img.eq(_len).addClass("curr").fadeIn().siblings().removeClass("curr");
+                            $album5Img.eq(_len).fadeIn();
+                            $album5Img.eq(_len).css({"transform": "scale(1)"});
+                            setTimeout(function(){
+                                $album5Img.eq(_len).css({"transform": "scale(0)"});
+                                setTimeout(function(){
+                                    $album5Img.eq(_len).hide().css({"transform": "scale(1)"});
+                                },1000);
+                            },1000)
+                            page5++;
+
+                        },2000);
+
+                    }
+                }
+
+
+                /* 特效一 */
+//                setInterval(event.fadeImg, 2000); /* fadeImg */
+                setInterval(event.easingTopImg, 3000); /* easingTopImg */
+//                setInterval(event.easingLeftImg,2000); /* easingLeftImg */
+
+                /* 特效二 */
+                event.togetherImg("init"); /* 初始化聚合图片 */
+                setInterval(event.scatterImg,3000); /* togetherImg */
+
+                /* 特效三 */
+                setInterval(event.gratingImg,2000);
+
+                /* 特效四 */
+                setInterval(event.becomeBig,2000);
+
+                /* 特效五 */
+                setTimeout(event.fadeRotateImg,0);
+
+            })
+        </script>
+
+    </head>
+    <body>
+        <div class="album album1" id="album">
+            <!-- 控制图片fade，easing。 -->
+            <ul>
+                <li class="curr"><img src="images/1.jpg"/> </li>
+                <li><img src="images/10.jpg"/> </li>
+                <li><img src="images/1.jpg"/> </li>
+                <li><img src="images/10.jpg"/> </li>
+            </ul>
+
+        </div>
+
+        <!-- 图片聚合散开效果 -->
+        <div class="album2" id="album2">
+            <ul>
+                <li class="item1 curr">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </li>
+                <li class="item2">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </li>
+                <li class="item1">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </li>
+                <li class="item2">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 图片切换变大效果 -->
+        <div class="album album3" id="album3">
+            <ul>
+                <li class="curr"><img src="images/1.jpg"/> </li>
+                <li><img src="images/10.jpg"/> </li>
+                <li><img src="images/1.jpg"/> </li>
+                <li><img src="images/10.jpg"/> </li>
+            </ul>
+        </div>
+
+        <!-- 图片逐渐变大 -->
+        <div class="album album4" id="album4">
+            <div class="album4-circle"></div>
+        </div>
+
+        <!-- 图片旋转消失 -->
+        <div class="album album5" id="album5">
+            <ul>
+                <li><img src="images/1.jpg"/> </li>
+                <li><img src="images/10.jpg"/> </li>
+                <li><img src="images/1.jpg"/> </li>
+                <li><img src="images/10.jpg"/> </li>
+                <li><img src="images/1.jpg"/> </li>
+                <li><img src="images/10.jpg"/> </li>
+                <li><img src="images/1.jpg"/> </li>
+            </ul>
+        </div>
+
+    </body>
+</html>
