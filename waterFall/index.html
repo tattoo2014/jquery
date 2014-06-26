@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+        <link rel="stylesheet" href="css/reset.css"/>
+        <script type="text/javascript" src="js/jquery-1.10.2.js"></script>
+        <title>瀑布流</title>
+        <style type="text/css">
+            .header {width: 1000px; height: 200px; background: url("images/header_bg.jpg") no-repeat; margin: auto; border: 1px solid #DDDDDD; box-shadow: 0 0 8px rgba(0,0,0,0.5)}
+            .box {width: 1000px; margin: 10px auto; padding: 20px;}
+            .waterFall {position: relative; height: auto;}
+            .waterFall ul li {position: absolute; width: 200px; padding: 10px; border: 1px solid #CCCCCC; text-align: center; box-shadow: 0 0 5px rgba(0,0,0,0.5); background: #ffffff;}
+            .waterFall ul li div {font-size: 16px;}
+            .footer {width: 1000px; height: 200px; background: url("images/footer_bg.jpg") no-repeat top right; margin: auto; border: 1px solid #DDDDDD; box-shadow: 0 0 8px rgba(0,0,0,0.5)}
+        </style>
+
+        <script type="text/javascript">
+            /* 等图片加载完成 */
+            $(window).load(function(){
+                var $waterFall = $(".waterFall"),
+                        li = '<li>'+
+                                '<a href="#"><img src=""/></a>'+
+                                '<div><strong></strong></div>'+
+                                '</li>',/* 要添加的li */
+                        liWidth = $waterFall.find("li").outerWidth(true), /* li宽度*/
+                        liHeight = [], /* li高度，随机的，由图片高度决定 */
+                        liLeft = 0, /* li距离左边位置 */
+                        liTop = [], /* li距离顶部位置 */
+                        leftDistance, /* li间距 */
+                        rowCount = 4, /* 一行显示的图片个数 */
+                        liAllCount = $waterFall.find("li").length, /* li总个数，也就是图片总个数 */
+                        scrollTop, /* 滚动条距离顶部的距离 */
+                        boxWidth = $(".box").width(), /* 盒子宽度 */
+                        wHeight, /* 窗口的高度 */
+                        page = 0; /* json数组中显示的页数 */
+
+                var event = {
+                    init: function(){
+                        /* 初始化li，给每个li定位 */
+                        $waterFall.find("li").each(function(){
+                            var _index = $(this).index();
+                            liTop[_index] = 0; /* 默认第一行图片距离顶部距离为0 */
+                            event.getLeftAndTop(_index);
+                        })
+                    },
+                    /* 设置li标签left和top值，li定位 */
+                    getLeftAndTop: function(index){
+                        var _row = index % rowCount; /* 第几列 */
+                        leftDistance = (boxWidth - liWidth*rowCount)/(rowCount-1); /* li间距 */
+                        liLeft = _row*(liWidth + leftDistance); /* 第index个图片距离左边距离 */
+                        liHeight[index] = $waterFall.find("li").eq(index).outerHeight(true); /* 表示第index个图片的高度 */
+                        if(index < rowCount){ /* 第一行，距离顶部距离都为0 */
+                            $waterFall.find("li").eq(index).css({left: liLeft+"px",top: 0});
+                        }else if(index >= rowCount){
+                            liTop[_row] += liHeight[index - rowCount] + 10; /* 行数大于2，高度自身以上距离+间距 */
+                            $waterFall.find("li").eq(index).css({left: liLeft+"px",top: liTop[_row]});
+                        }
+                        event.setMaxHeight();
+                    },
+                    /* 设计盒子高度，为了放置footer */
+                    setMaxHeight: function(){
+                        var newLiTop = [],maxHeight;
+                        for(var i = 0; i < liTop.length; i++){
+                            newLiTop[i] = liTop[i] + liHeight[i]; /* 得出四列的高度数组 */
+                        }
+                        maxHeight = Math.max.apply(Math,newLiTop); /* 选出高度最大值 */
+                        $waterFall.height(maxHeight); /* 赋值 */
+                    },
+                    scrollFun: function(){
+                        scrollTop = $(document).scrollTop();
+                        wHeight = $(window).height();
+                        if (($(window).height() + $(window).scrollTop()) >= $(document).height() - 10) { /* 当窗口高度+滚动条高度大于文档高度-10时触发ajax */
+                            $.ajax({
+                                url: "js/imagesUrl.json",
+                                dataType: "json",
+                                success: function(result){
+                                    if(result[page] != undefined){
+                                        var i, max = result[page].page.length; /* max为第page页的图片总个数 */
+                                        for(i = 0; i< max; i++){
+                                            $waterFall.find("ul").append(li);
+                                            liAllCount = $waterFall.find("li").length - 1; /* 得出最末尾的index数 */
+                                            $waterFall.find("li").eq(liAllCount).find("img").attr("src",result[page].page[i].url); /* 给图片url赋值 */
+                                            $waterFall.find("li").eq(liAllCount).find("strong").text("图片"+i);
+                                            event.getLeftAndTop(liAllCount); /* 调用图片定位 */
+                                        }
+                                        page++; /* 页数增加 */
+                                    }
+                                }
+
+                            })
+                            /* end ajax */
+                        }
+                    }
+                }
+
+                /*---------------------------调用事件-------------------------*/
+
+                /* 初始化 */
+                event.init();
+
+                /* 触发滚动条 */
+                $(window).scroll(function(){
+                    event.scrollFun();
+                })
+
+            })
+
+        </script>
+
+    </head>
+    <body>
+        <div class="header">header</div>
+        <div class="box clearfix">
+            <div class="waterFall">
+                <ul>
+                    <li>
+                        <a href="#"><img src="images/image_1.png"/></a>
+                        <div><strong>图片1</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_2.png"/></a>
+                        <div><strong>图片2</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_3.png"/></a>
+                        <div><strong>图片3</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_4.png"/></a>
+                        <div><strong>图片4</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_5.png"/></a>
+                        <div><strong>图片5</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_6.png"/></a>
+                        <div><strong>图片6</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_7.png"/></a>
+                        <div><strong>图片7</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_8.png"/></a>
+                        <div><strong>图片8</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_9.png"/></a>
+                        <div><strong>图片9</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_10.png"/></a>
+                        <div><strong>图片10</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_11.png"/></a>
+                        <div><strong>图片11</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_12.png"/></a>
+                        <div><strong>图片12</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_13.png"/></a>
+                        <div><strong>图片13</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_14.png"/></a>
+                        <div><strong>图片14</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_15.png"/></a>
+                        <div><strong>图片15</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_16.png"/></a>
+                        <div><strong>图片16</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_17.png"/></a>
+                        <div><strong>图片17</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_18.png"/></a>
+                        <div><strong>图片18</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_19.png"/></a>
+                        <div><strong>图片19</strong></div>
+                    </li>
+                    <li>
+                        <a href="#"><img src="images/image_20.png"/></a>
+                        <div><strong>图片20</strong></div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer"></div>
+
+    </body>
+</html>
